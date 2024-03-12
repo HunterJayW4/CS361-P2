@@ -168,17 +168,4 @@ public class NFA implements NFAInterface {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'isDFA'");
     }
-
-    public Set<State> getToStates(State fromState, char c) {
-        Map<Character, Set<State>> transitions = transitionFunction.get(fromState);
-        if (transitions == null) {
-            return new HashSet<>();
-        }
-        Set<State> toStates = transitions.get(c);
-        if (toStates == null) {
-            return new HashSet<>();
-        }
-        return toStates;
-    }
-    
 }
