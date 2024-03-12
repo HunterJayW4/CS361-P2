@@ -35,6 +35,4 @@ public abstract class State {
 	public String toString(){
 		return name;
 	}
-	
-	
 }
