@@ -1,25 +1,24 @@
 package fa.nfa;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import fa.State;
+
+import java.util.*;
 
 public class NFA implements NFAInterface {
 
-    private Set<State> states;
-    private Set<State> finalStates;
-    private State startState;
-    private Set<Character> sigma;
-    private Map<State, Map<Character, Set<State>>> transitionFunction;
+    private LinkedHashSet<Character> sigma;
+    private NFAState startState;
+    private LinkedHashSet<NFAState> finalStates;
+    private LinkedHashSet<NFAState> states;
+    private HashMap<String, HashMap<Character, Set<String>>> delta;
 
-    public NFA() {
-        this.states = new LinkedHashSet<>();
-        this.finalStates = new LinkedHashSet<>();
-        this.sigma = new LinkedHashSet<>();
-        this.transitionFunction = new HashMap<>();
+    public NFA (){
+        sigma = new LinkedHashSet<Character>();
+        startState = new NFAState();
+        finalStates = new LinkedHashSet<NFAState>();
+        states = new LinkedHashSet<NFAState>();
+        delta = new HashMap<String, HashMap<Character, Set<String>>>();
     }
-
     @Override
     public boolean addState(String name) {
         // Check if the state already exists
@@ -54,26 +53,63 @@ public class NFA implements NFAInterface {
 
     @Override
     public boolean setStart(String name) {
-        // Check if the state exists.
+        // Check if the state exists and if so, set it as the start state
         for (State tmp : states) {
             if (tmp.getName().equals(name)) {
-                startState = tmp;
+                // Assuming startState should hold a single state reference
+                // Directly set the found state as the start state
+                startState = (NFAState) tmp;
                 return true;
             }
         }
+        // If no state with the given name exists, return false
         return false;
     }
 
+
     @Override
     public void addSigma(char symbol) {
-        sigma.add(symbol);
+        // checks if the symbol already exists in sigma. Returns if it does to prevent duplicates
+        if(sigma.contains(symbol) || symbol == 'e'){
+            return;
+        }
+        sigma.add((Character)symbol);
     }
 
     @Override
     public boolean accepts(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'accepts'");
+        // Start from the e-closure of the start state
+        Set<NFAState> currentStates = eClosure(startState);
+
+        // Iterate over each character in the string
+        for (char c : s.toCharArray()) {
+            Set<NFAState> nextStates = new HashSet<>();
+
+            // Move to next states based on the current character
+            for (NFAState state : currentStates) {
+                Set<NFAState> statesForChar = getToState(state, c);
+                if (statesForChar != null) {
+                    for (NFAState nextState : statesForChar) {
+                        nextStates.addAll(eClosure(nextState)); // Include e-closure of next states
+                    }
+                }
+            }
+
+            // Update current states to the next states
+            currentStates = nextStates;
+        }
+
+        // Check if any of the current states is a final state
+        for (NFAState state : currentStates) {
+            if (isFinal(state.getName())) {
+                return true; // Accept if any final state is reached
+            }
+        }
+
+        return false; // Reject if no final state is reached
     }
+
+
 
     @Override
     public Set<Character> getSigma() {
@@ -81,91 +117,170 @@ public class NFA implements NFAInterface {
     }
 
     @Override
-    public State getState(String name) {
-        for(State state : states) {
-            if(state.getName().equals(name)) {
-                return state;
+    public NFAState getState(String name) {
+        // Directly iterate through the states set to find the state with the given name
+        for (State tmp : states) {
+            if (tmp.getName().equals(name)) {
+                // Return the matching state as NFAState
+                return (NFAState) tmp;
             }
         }
+        // Return null if no state with the given name exists
         return null;
     }
 
+
     @Override
     public boolean isFinal(String name) {
-        return finalStates.contains(getState(name));
+        // Directly iterate through the finalStates set to check if any state matches the given name
+        for (State tmp : finalStates) {
+            if (tmp.getName().equals(name)) {
+                return true; // Return true if a matching state is found
+            }
+        }
+        return false; // Return false if no matching state is found
     }
+
 
     @Override
     public boolean isStart(String name) {
-        return startState != null && startState.getName().equals(name);
+        // returns true if param is the start state
+        if(startState.getName().equals(name)){
+            return true;
+        }
+        return false;
     }
 
     @Override
     public Set<NFAState> getToState(NFAState from, char onSymb) {
-        // Get the transitions map for the 'from' state
-        Map<Character, Set<NFAState>> transitions = transitionFunction.get(from);
-        if (transitions == null) {
-            // If there are no transitions from the 'from' state, return an empty set
-            return new HashSet<>();
+        Set<NFAState> result = new HashSet<>();
+
+        // Assume delta is structured correctly and contains transitions
+        if (delta.containsKey(from.getName()) && delta.get(from.getName()).containsKey(onSymb)) {
+            Set<String> targetStateNames = delta.get(from.getName()).get(onSymb);
+            for (String stateName : targetStateNames) {
+                NFAState state = getState(stateName);
+                if (state != null) {
+                    result.add(state);
+                }
+            }
         }
-        // Get the set of states that can be reached on 'onSymb'
-        Set<NFAState> toStates = transitions.get(onSymb);
-        if (toStates == null) {
-            // If there are no states that can be reached on 'onSymb', return an empty set
-            return new HashSet<>();
-        }
-        // Return the set of states that can be reached on 'onSymb'
-        return toStates;
+        return result;
     }
 
     @Override
     public Set<NFAState> eClosure(NFAState s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'eClosure'");
+        Set<NFAState> closure = new HashSet<>();
+        Stack<NFAState> stack = new Stack<>();
+
+        stack.push(s);
+        closure.add(s);
+
+        while (!stack.isEmpty()) {
+            NFAState currentState = stack.pop();
+
+            // Assuming delta is structured to support NFA: String -> (Character -> Set<String>)
+            // And assuming a method to convert state names to NFAState objects exists
+            if (delta.containsKey(currentState.getName()) && delta.get(currentState.getName()).containsKey('e')) {
+                Set<String> nextStateNames = delta.get(currentState.getName()).get('e');
+                for (String nextStateName : nextStateNames) {
+                    NFAState nextState = getState(nextStateName); // Convert state name to NFAState
+                    if (!closure.contains(nextState)) {
+                        closure.add(nextState);
+                        stack.push(nextState);
+                    }
+                }
+            }
+        }
+
+        return closure;
     }
 
     @Override
     public int maxCopies(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'maxCopies'");
+        // Start with the initial state and its epsilon closure as the current states.
+        Set<NFAState> currentStates = new HashSet<>(eClosure(startState));
+        int maxCopies = currentStates.size();
+
+        for (int i = 0; i < s.length(); i++) {
+            char symbol = s.charAt(i);
+            Set<NFAState> nextStates = new HashSet<>();
+
+            for (NFAState state : currentStates) {
+                // For each state, find where you can go with the current symbol
+                Set<NFAState> transitions = getToState(state, symbol);
+                if (transitions != null) {
+                    for (NFAState nextState : transitions) {
+                        // Add all states reachable from nextState through epsilon closure
+                        nextStates.addAll(eClosure(nextState));
+                    }
+                }
+            }
+
+            // Update current states to be the next set of states
+            currentStates = nextStates;
+            // Update maxCopies if the number of states in this step is greater
+            maxCopies = Math.max(maxCopies, currentStates.size());
+        }
+
+        // Return the maximum number of NFA "copies" encountered, interpreted as the max breadth of parallel active states.
+        return maxCopies;
     }
 
     @Override
     public boolean addTransition(String fromState, Set<String> toStates, char onSymb) {
-        // Check if the 'fromState' exists and the symbol is in the alphabet
-        if (getState(fromState) == null || !sigma.contains(onSymb)) {
-            return false;
+        // Check if fromState exists in states
+        boolean fromStateExists = states.stream().anyMatch(s -> s.getName().equals(fromState));
+
+        // Check if all toStates exist in states
+        boolean allToStatesExist = toStates.stream().allMatch(ts -> states.stream().anyMatch(s -> s.getName().equals(ts)));
+
+        // Check if onSymb is valid (assuming 'e' is epsilon and sigma is a Set<Character> of valid symbols)
+        boolean isValidSymbol = sigma.contains(onSymb) || onSymb == 'e';
+
+        if(fromStateExists && allToStatesExist && isValidSymbol) {
+            // Ensure the delta map for fromState exists
+            delta.putIfAbsent(fromState, new HashMap<>());
+
+            // Update the transition for onSymb to include all toStates. Assuming you want to support multiple toStates for a given fromState and symbol.
+            // Note: This line might need adjustment based on how you intend to store multiple toStates for the same fromState and onSymb.
+            // If you want to merge with existing states, you'll need to get the current set and add all toStates.
+            Set<String> currentToStates = delta.get(fromState).getOrDefault(onSymb, new HashSet<>());
+            currentToStates.addAll(toStates);
+            delta.get(fromState).put(onSymb, currentToStates);
+
+            return true;
         }
-        // Check if all 'toStates' exist
-        for (String toState : toStates) {
-            if (getState(toState) == null) {
-                return false;
-            }
-        }
-        // Get the transitions map for the 'fromState'
-        Map<Character, Set<State>> transitions = transitionFunction.get(getState(fromState));
-        if (transitions == null) {
-            // If there are no transitions from the 'fromState', create a new map
-            transitions = new HashMap<>();
-            transitionFunction.put(getState(fromState), transitions);
-        }
-        // Get the set of states that can be reached on 'onSymb'
-        Set<State> onSymbStates = transitions.get(onSymb);
-        if (onSymbStates == null) {
-            // If there are no states that can be reached on 'onSymb', create a new set
-            onSymbStates = new HashSet<>();
-            transitions.put(onSymb, onSymbStates);
-        }
-        // Add all 'toStates' to the set of states that can be reached on 'onSymb'
-        for (String toState : toStates) {
-            onSymbStates.add(getState(toState));
-        }
-        return true;
+        return false;
     }
+
 
     @Override
     public boolean isDFA() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'isDFA'");
+        // Check for ε (epsilon) transitions; their presence means this is not a DFA
+        for (Map.Entry<String, HashMap<Character, Set<String>>> stateTransitions : delta.entrySet()) {
+            if (stateTransitions.getValue().containsKey('e')) {
+                return false;
+            }
+        }
+
+        // Check each state's transitions to ensure determinism: exactly one transition per input symbol
+        for (Map.Entry<String, HashMap<Character, Set<String>>> stateTransitions : delta.entrySet()) {
+            HashMap<Character, Set<String>> transitions = stateTransitions.getValue();
+
+            // Check if there's exactly one transition for each symbol in the alphabet
+            for (Character symbol : sigma) {
+                Set<String> toStates = transitions.get(symbol);
+
+                // If any symbol does not have exactly one transition, or the transition is missing, it's not a DFA
+                if (toStates == null || toStates.size() != 1) {
+                    return false;
+                }
+            }
+        }
+
+        // If no ε transitions and exactly one transition per symbol per state, it's a DFA
+        return true;
     }
+
 }
