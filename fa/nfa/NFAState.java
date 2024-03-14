@@ -3,8 +3,11 @@ package fa.nfa;
 import fa.State;
 
 public class NFAState extends State {
-    
-    public NFAState(String name) {
+
+    public NFAState(){
+        super("");
+    }
+    public NFAState(String name){
         super(name);
     }
 }
