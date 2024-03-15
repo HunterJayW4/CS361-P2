@@ -36,10 +36,6 @@ and fun way to really put our NFA to the test. Our program seemed to handle it f
 
 ## Compiling and Using
 
-This section should tell the user how to compile your code.  It is
-also appropriate to instruct the user how to use your code. Does your
-program require user input? If so, what does your user need to know
-about it to use it as quickly as possible?
-
-## Sources used
-
+To test the functionality of our NFA the user should run the JUNIT tests provided
+in the project. Otherwise the user could manually create their own NFA and modify
+it to their liking with the provided NFA methods.
