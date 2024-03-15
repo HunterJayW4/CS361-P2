@@ -1,9 +1,16 @@
 package fa.nfa;
 
 import fa.State;
-
 import java.util.*;
 
+
+/**
+ * NFA implements NFAInterface and FAInterface methods.
+ * This is for creating an NFA instance.
+ * 
+ * @auhtor Hunter Walp & Karter Melad
+ * @version Spring 2024
+ */
 public class NFA implements NFAInterface {
 
     private LinkedHashSet<Character> sigma;
@@ -19,6 +26,7 @@ public class NFA implements NFAInterface {
         states = new LinkedHashSet<NFAState>();
         delta = new HashMap<String, HashMap<Character, Set<String>>>();
     }
+
     @Override
     public boolean addState(String name) {
         // Check if the state already exists
@@ -109,8 +117,6 @@ public class NFA implements NFAInterface {
         return false; // Reject if no final state is reached
     }
 
-
-
     @Override
     public Set<Character> getSigma() {
         return sigma;
@@ -198,6 +204,9 @@ public class NFA implements NFAInterface {
 
     @Override
     public int maxCopies(String s) {
+        if (s.isEmpty()) {
+            return 0;
+        }
         // Start with the initial state and its epsilon closure as the current states.
         Set<NFAState> currentStates = new HashSet<>(eClosure(startState));
         int maxCopies = currentStates.size();
