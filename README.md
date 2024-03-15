@@ -32,6 +32,24 @@ and fun way to really put our NFA to the test. Our program seemed to handle it f
 
 ### Hunter Reflection
 
+I found the NFA project to be about the same difficulty as the DFA project, maybe
+even a little easier. The project followed along with the class content well, and
+made it fairly easy for me to begin working on Project 2. There were some challenges,
+primarily the accepts function and the eClosure function. The eClosure function was 
+more of a knowledge problem for me, I didn't fully understand how I would find the 
+eClosure of a state, and writing the function helped me get a better grasp on the 
+concept.
+
+The testing side of things went fairly smoothly. I used the debugger in IntelliJ
+IDEA a lot. It helped me to set breakpoints on the test cases, and walk through
+the logic of our NFA. After Karter and I thought that we had a good, functioning
+NFA, we decided to create a really large NFA, with 100 states and sort of "stress
+test" it. There were some weird quirks when writing tests that large, but Karter 
+found them and ironed them out. Overall, I enjoyed this project a lot. It was nice
+to be able to copy some of the methods over from our DFA, and dig deeper into how
+an NFA functions, and it helped me understand some of the more complex functionality 
+of an NFA as a whole.
+
 
 
 ## Compiling and Using
